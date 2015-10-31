@@ -208,7 +208,7 @@ def getwithinfo(url):
         attemptcount = attemptcount + 1
         if attemptcount > 1:
             delay(retry_delay)
-        logging.debug( "Attempt "+repr(attemptcount)+" for URL: "+repr(url) )
+            logging.debug( "Attempt "+repr(attemptcount)+" for URL: "+repr(url) )
         try:
 ##            save_file(
 ##                file_path = os.path.join("debug","get_last_url.txt"),
