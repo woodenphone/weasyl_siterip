@@ -8,9 +8,7 @@
 # Copyright:   (c) User 2015
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
-import sqlalchemy
 import logging
-from bs4 import BeautifulSoup# http://www.crummy.com/software/BeautifulSoup/bs4/doc/
 import re
 
 from utils import * # General utility functions
@@ -29,6 +27,7 @@ def detect_if_logged_in(html):
         is_logged_in = False
     return is_logged_in
 
+
 # Submission specific
 def detect_if_submission_exists(html):
     """Detect if this is a page for a noxexistant submission"""
@@ -42,6 +41,7 @@ def detect_if_submission_exists(html):
 def save_submission(output_path,submission_number):
     """Download a submission from weasyl
     save to <username>/submission/<submission_number>_<submission_filename.ext>
+    and <username>/submission/<submission_number>.html
     Return True if successful"""
     # Load the submission page
     submission_page_url = "https://www.weasyl.com/submission/"+str(submission_number)
@@ -116,7 +116,9 @@ def detect_if_journal_exists(html):
 
 
 def save_journal(output_path, journal_number):
-    """foo"""
+    """Download a journal from weasyl
+    save to <username>/journal/<journal_number>.html
+    Return True if successful"""
     # Load the journal page
     journal_page_url = "https://www.weasyl.com/journal/"+str(journal_number)
     logging.debug("journal_page_url: "+repr(journal_page_url))
@@ -171,7 +173,10 @@ def detect_if_character_exists(html):
 
 
 def save_character(output_path, character_number):
-    """foo"""
+    """Download a character from weasyl
+    save to <username>/character/<character_number>_<character_filename.ext>
+    and <username>/character/<character_number>.html
+    Return True if successful"""
     # Load the journal page
     character_page_url = "https://www.weasyl.com/character/"+str(character_number)
     logging.debug("character_page_url: "+repr(character_page_url))
@@ -239,14 +244,6 @@ def save_character_range(output_path,start_number,stop_number):
 
 
 # Debug
-def explore_json():
-    """Debug"""
-    json_data = read_file(os.path.join("notes","6404920.json"))
-    json_obj = json.loads(json_data)
-    logging.debug("json_obj: "+repr(json_obj))
-    return
-
-
 def debug():
     """where stuff is called to debug and test"""
     output_path="output"
@@ -294,8 +291,7 @@ def debug():
 
 def main():
     try:
-        setup_logging(log_file_path=os.path.join("debug","pysagi-log.txt"))
-        #run()
+        setup_logging(log_file_path=os.path.join("debug","weasyl_siterip-log.txt"))
         debug()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
