@@ -37,6 +37,65 @@ def detect_if_submission_exists(html):
             submission_exists = False
     return submission_exists
 
+def detect_if_bandcamp_submission(html):
+    """
+    """
+    is_bandcamp = False
+    if """src="https://bandcamp.com/EmbeddedPlayer/""" in html:
+        is_bandcamp = True
+    return is_bandcamp
+
+
+def detect_if_youtube_submission(html):
+    """
+    """
+    is_youtube = False
+    if """src="https://bandcamp.com/EmbeddedPlayer/""" in html:
+        is_bandcamp = True
+    return is_youtube
+
+
+
+def save_bandcamp_submission(output_path,submission_number,submission_page_html):
+    """
+    Download a bandcamp submission
+    save to <username>/submission/<submission_number>_<submission_filename.ext>
+    and <username>/submission/<submission_number>.html
+    """
+    logging.debug("Saving bandcamp submission: "+repr(submission_number))
+    assert(detect_if_bandcamp_submission(submission_page_html))
+    # Find username
+    #<h1 id="detail-title" class="pad-left pad-right">... <i>by</i> <a class="username" href="/~silentcicada">Silent Cicada</a>   ... </h1>
+    # <i>by</i>\s+<a\s+class="username"\s+href="/~(\w+)">
+    """<i>by</i>\s+<a\s+class="username"\s+href="/~(\w+)">"""
+    username_search = re.search("""<i>by</i>\s+<a\s+class="username"\s+href="/~(\w+)">""", submission_page_html, re.IGNORECASE)
+    username = username_search.group(1)
+    # Find submission image
+    # <div id="detail-art">
+    #    <img src="https://cdn.weasyl.com/static/media/54/69/65/54696582851bc2c17969cd364e555fbe6db792a1d19c6dcb1f715eff89429aeb.png" alt="" style="margin-bottom: 3em">
+    #  </div>
+    # <div\s+id="detail-art">\s+<img\s+src="([^"'<>\n]+)"
+    # https://cdn.weasyl.com/static/media/54/69/65/54696582851bc2c17969cd364e555fbe6db792a1d19c6dcb1f715eff89429aeb.png
+    submission_image_link_search = re.search('''<div\s+id="detail-art">\s+<img\s+src="([^"'<>\n]+)"''', submission_page_html, re.IGNORECASE)
+    submission_image_link = submission_image_link_search.group(1)
+    submission_image = get_url(submission_image_link)
+    submission_image_filename = os.path.basename(submission_image_link)
+    submission_image_path = os.path.join(output_path, username, "submission", str(submission_number)+"_"+submission_image_filename)
+    save_file(
+        file_path = submission_image_path,
+        data = submission_image,
+        force_save = True,
+        allow_fail = False
+        )
+    submission_page_path = os.path.join(output_path, username, "submission", str(submission_number)+".html")
+    save_file(
+        file_path = submission_page_path,
+        data = submission_page_html,
+        force_save = True,
+        allow_fail = False
+        )
+    return True
+
 
 def save_submission(output_path,submission_number):
     """Download a submission from weasyl
@@ -58,6 +117,14 @@ def save_submission(output_path,submission_number):
     if detect_if_submission_exists(submission_page_html) is False:
         logging.error("Submission does not exist.")
         return False
+    # Handle bandcamp audio submissions seperately
+    if detect_if_bandcamp_submission(submission_page_html) is True:
+        logging.warning("Submission is bandcamp, only saving html.")
+        return save_bandcamp_submission(
+            output_path,
+            submission_number,
+            submission_page_html
+            )
 
     # Example download link: <a href="https://cdn.weasyl.com/~tsaiwolf/submissions/1136308/7c1d7ecc303bd165c5198f188617449ff0c4d5a078dbe977edc06078d9c6444c/tsaiwolf-bedtimes-for-fenfen-erect.jpg?download"><span class="icon icon-20 icon-arrowDown"></span> Download</a>
     # Find download link
@@ -177,20 +244,20 @@ def save_character(output_path, character_number):
     save to <username>/character/<character_number>_<character_filename.ext>
     and <username>/character/<character_number>.html
     Return True if successful"""
-    # Load the journal page
+    # Load the character page
     character_page_url = "https://www.weasyl.com/character/"+str(character_number)
     logging.debug("character_page_url: "+repr(character_page_url))
     character_page_html = get_url(character_page_url)
     if character_page_html is None:# Handle failure to load page
-        logging.error("Could not load journal page!")
+        logging.error("Could not load character page!")
         return False
     # Ensure we are logged in
     if detect_if_logged_in(character_page_html) is False:
         logging.error("Not logged in, not saving page")
         return False
-    # Ensure the journal exists
+    # Ensure the character exists
     if detect_if_character_exists(character_page_html) is False:
-        logging.error("Journal does not exist: "+repr(character_number))
+        logging.error("character does not exist: "+repr(character_number))
         return False
 
     # Find the username
@@ -201,7 +268,7 @@ def save_character(output_path, character_number):
     # Example download link: <a href="https://cdn.weasyl.com/static/character/5e/b8/d1/bc/43/dc/kaysimagination-58267.submit.112489.png"><span class="icon icon-20 icon-arrowDown"></span> Download</a>
     # Find download link
     download_link_search = re.search("""<a\shref="([^"]+.weasyl.com/static/character/[^"]+)">""", character_page_html, re.IGNORECASE)
-    character_media_link = download_link_search.group(1)# 'https://cdn.weasyl.com/~bunny/submissions/9000/1aeeaa6032d590e2f3692cba05ad95ac9090b61098cc720833f88c5abd03ea27/bunny-ashes-badge.png?'
+    character_media_link = download_link_search.group(1)
     logging.debug("character_media_link: "+repr(character_media_link))
     character_media = get_url(character_media_link)
     if character_media is None:
@@ -257,6 +324,17 @@ def debug():
 ##        output_path,
 ##        submission_number=1136308
 ##        )
+    # Audio submission that we crashed on (bandcamp)
+    save_submission(
+        output_path,
+        submission_number=1136234
+        )
+    # Video submission (youtube)
+    # https://www.weasyl.com/submission/1136032/laughing-zombie
+    save_submission(
+        output_path,
+        submission_number=1136032
+        )
 ##    # Save a range of submissions
 ##    save_submission_range(
 ##        output_path,
@@ -279,13 +357,13 @@ def debug():
 ##        output_path,
 ##        character_number=58267
 ##        )
-    # Save a range of characters
-    save_character_range(
-        output_path,
-        start_number=(58267-100),
-        stop_number=58267
-        )
-    return
+##    # Save a range of characters
+##    save_character_range(
+##        output_path,
+##        start_number=(58267-100),
+##        stop_number=58267
+##        )
+##    return
 # /Debug
 
 
