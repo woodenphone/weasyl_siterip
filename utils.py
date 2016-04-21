@@ -193,7 +193,7 @@ def getwithinfo(url):
     """
     attemptcount = 0
     max_attempts = 10
-    retry_delay = 10
+    retry_delay = 2
     request_delay = 0.0
     assert_is_string(url)
     deescaped_url = deescape(url)
