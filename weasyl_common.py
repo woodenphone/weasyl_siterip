@@ -31,7 +31,7 @@ def generate_media_filepath(root_path, media_type, media_id, media_filename):
 
 
 def generate_html_filepath(root_path, media_type, media_id):
-    """root/type/millions/thousands/id.filename"""
+    """root/type/millions/thousands/id.html"""
     padded_id_string = str(media_id).zfill(9)
     millions_section = padded_id_string[0:3]
     thousands_section = padded_id_string[3:6]
@@ -43,7 +43,7 @@ def generate_html_filepath(root_path, media_type, media_id):
 
 
 def generate_tag_history_filepath(root_path, media_type, media_id):
-    """root/type/millions/thousands/id.filename"""
+    """root/type/millions/thousands/id.tag_history.html"""
     padded_id_string = str(media_id).zfill(9)
     millions_section = padded_id_string[0:3]
     thousands_section = padded_id_string[3:6]

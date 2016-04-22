@@ -22,22 +22,19 @@ def detect_if_submission_exists(html):
             submission_exists = False
     return submission_exists
 
+
 def detect_if_bandcamp_submission(html):
-    """
-    """
+    """Return True if submission html is a bandcamp embed submission"""
     return ("""src="https://bandcamp.com/EmbeddedPlayer/""" in html)
 
 
-
 def detect_if_youtube_submission(html):
-    """
-    """
+    """Return True if submission html is a youtube embed submission"""
     return ("""src="https://www.youtube.com/embed/""" in html)
 
 
 def detect_if_googledocs_submission(html):
-    """
-    """
+    """Return True if submission html is a google documents embed submission"""
     #src="https://docs.google.com/document/d/188lEgSsvNCOUQTVGQ465x8gLboOpadegeXEEjqAxDIo/pub?embedded=true" class="content gdoc"
     return ( ("""src="https://docs.google.com/document/""" in html) and ("""class="content gdoc""" in html) )
 
@@ -318,7 +315,7 @@ def main():
         save_submission_range(
             output_path = config.root_path,
             start_number = 10000,
-            stop_number = 10009
+            stop_number = 10099
             )
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
