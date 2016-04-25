@@ -35,10 +35,12 @@ def save_journal(output_path, journal_number):
         logging.error("Could not load journal page!")
         return False
         #raise Exception("Could not load journal page!")
+
     # Ensure we are logged in
     if detect_if_logged_in(journal_page_html) is False:
         logging.error("Not logged in, not saving page.")
         raise Exception("Not logged in, not saving page.")
+
     # Ensure the journal exists
     if detect_if_journal_exists(journal_page_html) is False:
         logging.error("Journal does not exist: "+repr(journal_number))

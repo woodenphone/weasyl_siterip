@@ -94,6 +94,7 @@ def save_submission_google_docs(output_path,submission_number,submission_page_ht
     """
     Save google docs submissions
     """
+    assert(detect_if_googledocs_submission(submission_page_html))
     # Generate local html filepath
     submission_page_path = generate_html_filepath(
         root_path = output_path,
@@ -106,7 +107,6 @@ def save_submission_google_docs(output_path,submission_number,submission_page_ht
         force_save = True,
         allow_fail = False
         )
-    save_submission_tag_history(output_path, submission_number)
     return True
 
 
@@ -114,6 +114,7 @@ def save_submission_youtube(output_path,submission_number,submission_page_html):
     """
     Save youtube embed submissions
     """
+    assert(detect_if_youtube_submission(submission_page_html))
     # Generate local html filepath
     submission_page_path = generate_html_filepath(
         root_path = output_path,
@@ -126,7 +127,6 @@ def save_submission_youtube(output_path,submission_number,submission_page_html):
         force_save = True,
         allow_fail = False
         )
-    save_submission_tag_history(output_path, submission_number)
     return True
 
 
@@ -248,10 +248,12 @@ def save_submission(output_path, submission_number):
         logging.error("Could not load submission page!")
         return False
         #raise Exception("Could not load submission page!")
+
     # Ensure we are logged in
     if detect_if_logged_in(submission_page_html) is False:
         logging.error("Not logged in, not saving page.")
         raise Exception("Not logged in, not saving page.")
+
     # Detect if sumbission is noexistant
     if detect_if_submission_exists(submission_page_html) is False:
         logging.error("Submission does not exist.")

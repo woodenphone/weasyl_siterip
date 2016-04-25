@@ -309,8 +309,6 @@ def getwithinfo(url):
     return
 
 
-
-
 def assert_is_string(object_to_test):
     """Make sure input is either a string or a unicode string"""
     if( (type(object_to_test) == type("")) or (type(object_to_test) == type(u"")) ):
@@ -334,46 +332,6 @@ def get_current_unix_time():
     current_time = time.time()
     timestamp = int(current_time *1000)
     return timestamp
-
-def get_current_unix_time_8chan():
-    """Return the current unix time as an integer
-    ex. 1444545553"""
-    # https://timanovsky.wordpress.com/2009/04/09/get-unix-timestamp-in-java-python-erlang/
-    current_time = time.time()
-    timestamp = int(current_time)
-    return timestamp
-
-
-def merge_dicts(*dict_args):
-    # http://stackoverflow.com/questions/38987/how-can-i-merge-two-python-dictionaries-in-a-single-expression
-    '''
-    Given any number of dicts, shallow copy and merge into a new dict,
-    precedence goes to key value pairs in latter dicts.
-    '''
-    result = {}
-    for dictionary in dict_args:
-        result.update(dictionary)
-    return result
-
-
-def flatten(sequence,contents=[]):
-    """Take a dict, tuple, or list, and flatten it."""
-    # Flatten dicts
-    if (type(sequence) == type({})):
-        for dict_key in sequence.keys():
-            field = sequence[dict_key]
-            if ( (type(field) == type({})) or (type(field) == type([])) or (type(field) == type((1,2)))):
-                contents.append(flatten(field,contents))
-            else:
-                contents.append(field)
-    # Flatten lists and tuples
-    elif (
-    (type(sequence) == type([])) or
-    (type(sequence) == type(()))
-    ):
-        for item in sequence:
-            contents.append(item)
-    return contents
 
 
 def uniquify(seq, idfun=None):
@@ -496,80 +454,9 @@ def generate_filename(ext,sha512base16_hash=None):
     return filename
 
 
-def generate_path(root_path,filename):
-    """Abstraction for generating file paths
-    Take a filename and create a path for it
-    Uses /12/34/56/ style due to folders containing 16^n subfolders
-    where n is number of digits per foldername"""
-    file_path = os.path.join(
-        root_path,
-        filename[0:2],# First two chars of filename
-        filename[2:4],# Second two chars of filename
-        filename[4:6],# Third two chars of filename
-        filename
-        )
-    return file_path
-
-
-def clean_blog_url(raw_url):
-    """Given a blog name or URL, mangle it into something the tumblr API will probably like"""
-    # Example urls that need handling:
-    # http://jessicaanner.tumblr.com/post/113520547711/animated-versions-here-main-view-webm-gif
-    # http://havesomemoore.tumblr.com/
-    # http://pwnypony.com/
-    # (?:https?://)([^#/'"]+)
-    stripped_url = raw_url.strip("\r\n\t ")
-    logging.debug("stripped_url: "+repr(stripped_url))
-    blog_url_regex = """(?:https?://)?([^#/'"]+)"""
-    blog_url_search = re.search(blog_url_regex, stripped_url, re.IGNORECASE)
-    if blog_url_search:
-        blog_url = blog_url_search.group(1)
-        return blog_url
-    else:
-        logging.error("Can't parse list item! Skipping it.")
-        logging.error("clean_blog_url()"+" "+"raw_url"+": "+repr(raw_url))
-        return ""
-
-
 def clean_list_line(line):
     stripped_url = line.strip("\r\n\t ")
     return stripped_url
-
-
-def import_blog_list(list_file_path="tumblr_todo_list.txt"):
-    """Import (open and parse) list file of blogs to save
-    return a list of api-friendly blog url strings"""
-    logging.debug("import_blog_list() list_file_path: "+repr(list_file_path))
-    # Make sure list file folder exists
-    list_file_folder =  os.path.dirname(list_file_path)
-    if list_file_folder:
-        if not os.path.exists(list_file_folder):
-            os.makedirs(list_file_folder)
-    # Create new empty list file if no list file exists
-    if not os.path.exists(list_file_path):
-        logging.debug("import_blog_list() Blog list file not found, creating it.")
-        new_file = open(list_file_path, "w")
-        new_file.write('# Add one URL per line, comments start with a #, nothing but username on a line that isnt a comment\n\n')
-        new_file.close()
-        return []
-    # Read each line from the list file and process it
-    blog_urls = []
-    list_file = open(list_file_path, "rU")
-    line_counter = 0
-    for line in list_file:
-        line_counter += 1
-        # Strip empty and comment lines
-        if line[0] in ["#", "\r", "\n"]:
-            continue
-        else:
-            cleaned_url = clean_list_line(line)
-            if cleaned_url:
-                blog_urls.append(cleaned_url+u"")
-            else:
-                logging.error("import_blog_list(): Cleaning line "+repr(line_counter)+" : "+repr(line)+"Failed!")
-    blog_urls = uniquify(blog_urls)
-    logging.debug("import_blog_list() blog_urls: "+repr(blog_urls))
-    return blog_urls
 
 
 def appendlist(lines,list_file_path="tumblr_done_list.txt",initial_text="# List of completed items.\n"):
@@ -611,12 +498,6 @@ def get_file_extention(file_path):
     if file_extention_search:
         file_extention = file_extention_search.group(1)
         return file_extention
-
-
-def parse_tumblr_timsetamp_string(date_string):
-    """Parse tumblr datestring to unix time
-    u'date': u'2014-01-24 19:40:00 GMT'"""
-    return datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S %Z")
 
 
 def split_list(list_in,number_of_pieces):
@@ -674,30 +555,8 @@ def find_file_size(file_path):
 
 
 def main():
-    # test parse_ponychan_datetime(time_string)
-
     return
-    # Test split_list
-    print split_list(range(7), 2)
-    print split_list(range(6), 3)
-    print split_list(range(100), 10)
-    print split_list([{1:1},{2:2},{3:3},{4:4}], 10)
-    # Test get_file_extention
-    print get_file_extention("http://41.media.tumblr.com/5f52121f2a8f03b086aff076a00a5e2d/tumblr_nfcz9lPRUR1qbvkmso1_1280.jpg?")# jpg
-    print get_file_extention(u'https://www.tumblr.com/explore/links')# None
-    print get_file_extention("gLdiLePCFaV6t1x56uokkwMvcuTNwhFYksCfR6h4zk3gU2bvGjnIprjtcKaLNUW8Snxl9iFutq51hjgO2DLB9A==")# None
-    print get_file_extention("http://www.papermag.com/2014/11/arabelle_sicardi.php")# php
 
-    print parse_tumblr_timsetamp_string("2014-01-24 19:40:00 GMT")
-    # Test hashing of files
-    test_filename = "hashtest.txt"
-    hash_a = hash_file(test_filename)
-    print hash_a
-    with open(test_filename) as f:
-        file_data = f.read()
-    hash_b = hash_file_data(file_data)
-    print hash_b
-    print "Hashes matched?", (hash_a == hash_b)
 
 if __name__ == '__main__':
     main()

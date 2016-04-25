@@ -36,10 +36,12 @@ def save_character(output_path, character_number):
     if character_page_html is None:# Handle failure to load page
         logging.error("Could not load character page!")
         return False
+
     # Ensure we are logged in
     if detect_if_logged_in(character_page_html) is False:
         logging.error("Not logged in, not saving page")
         raise Exception("Not logged in, not saving page")
+
     # Ensure the character exists
     if detect_if_character_exists(character_page_html) is False:
         logging.error("character does not exist: "+repr(character_number))
@@ -50,10 +52,12 @@ def save_character(output_path, character_number):
     download_link_search = re.search("""<a\shref="([^"]+.weasyl.com/static/character/[^"]+)">""", character_page_html, re.IGNORECASE)
     character_media_link = download_link_search.group(1)
     logging.debug("character_media_link: "+repr(character_media_link))
+    # Open the download link
     character_media = get_url(character_media_link)
     if character_media is None:
         logging.error("Could not load character media!")
-        return False
+        raise Exception("Could not load character media!")
+        #return False
     # Find the fileename to save the media as
     media_filename_search = re.search("""/([^"/?]+)$""", character_media_link, re.IGNORECASE)
     media_filename = media_filename_search.group(1)
