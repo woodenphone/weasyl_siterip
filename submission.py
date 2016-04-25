@@ -24,6 +24,13 @@ def detect_if_submission_exists(html):
             submission_exists = False
     return submission_exists
 
+def detect_if_friends_only(html):
+    """Detect if a submission page is restricted to friends of the uploader"""
+    return(
+        ('This page contains content that you cannot view because the page owner has allowed only friends to access it.' in html) and
+        ('?download">' not in html)# Submission download link
+        )
+
 
 def detect_if_bandcamp_submission(html):
     """Return True if submission html is a bandcamp embed submission"""
@@ -130,6 +137,17 @@ def save_submission_youtube(output_path,submission_number,submission_page_html):
     return True
 
 
+def check_if_dl_skip_is_permitted(submission_number,submission_page_html):
+    """Decide if, after failing to find a download link, to keep going as normal"""
+    return (
+        ('<dt>Category:</dt> <dd>Multimedia' in submission_page_html) and# Media (audio/video) catgory
+        ('<dt>Category:</dt> <dd>Visual' not in submission_page_html) and# Visual (Pictures) category
+        ('<!-- VISUAL -->' not in submission_page_html) and# submission picture box
+        ('<div id="detail-art">' not in submission_page_html) and# Submission media view box
+        ('<!-- /detail-art -->' not in submission_page_html) and# Submission media view box
+        ('?download">' not in submission_page_html)# Submission download link
+        )
+
 
 def save_submission_tag_history(output_path, submission_number):
     """Save the tag history page sor a given submissionID"""
@@ -195,29 +213,47 @@ def save_submission_normal(output_path,submission_number,submission_page_html):
     # Example download link: <a href="https://cdn.weasyl.com/~tsaiwolf/submissions/1136308/7c1d7ecc303bd165c5198f188617449ff0c4d5a078dbe977edc06078d9c6444c/tsaiwolf-bedtimes-for-fenfen-erect.jpg?download"><span class="icon icon-20 icon-arrowDown"></span> Download</a>
     # Find download link
     download_link_search = re.search("""href="([^"]+weasyl.com/~(\w+)/submissions/[^"]+?download)">""", submission_page_html, re.IGNORECASE)
-    submission_media_link = download_link_search.group(1)# 'https://cdn.weasyl.com/~bunny/submissions/9000/1aeeaa6032d590e2f3692cba05ad95ac9090b61098cc720833f88c5abd03ea27/bunny-ashes-badge.png?'
-    submission_media = get_url(submission_media_link)
-    if submission_media is None:
-        logging.error("Could not load submission media!")
-        raise Exception("Could not load submission media!")
-    # Find the fileename to save the media as
-    media_filename_search = re.search("""/([^"/?]+)\?download$""", submission_media_link, re.IGNORECASE)
-    media_filename = media_filename_search.group(1)
-    # Generate local media filepath
-    submission_media_path = generate_media_filepath(
-        root_path = output_path,
-        media_type = "submission",
-        media_id = submission_number,
-        media_filename = media_filename
-        )
-    logging.debug("submission_media_path: "+repr(submission_media_path))
-    # Save the submission media before page
-    save_file(
-        file_path = submission_media_path,
-        data = submission_media,
-        force_save = True,
-        allow_fail = False
-        )
+    if download_link_search:
+        submission_media_link = download_link_search.group(1)# 'https://cdn.weasyl.com/~bunny/submissions/9000/1aeeaa6032d590e2f3692cba05ad95ac9090b61098cc720833f88c5abd03ea27/bunny-ashes-badge.png?'
+
+        submission_media = get_url(submission_media_link)
+        if submission_media is None:
+            logging.error("Could not load submission media!")
+            raise Exception("Could not load submission media!")
+
+        # Find the fileename to save the media as
+        media_filename_search = re.search("""/([^"/?]+)\?download$""", submission_media_link, re.IGNORECASE)
+        media_filename = media_filename_search.group(1)
+
+        # Generate local media filepath
+        submission_media_path = generate_media_filepath(
+            root_path = output_path,
+            media_type = "submission",
+            media_id = submission_number,
+            media_filename = media_filename
+            )
+        logging.debug("submission_media_path: "+repr(submission_media_path))
+
+        # Save the submission media before page
+        save_file(
+            file_path = submission_media_path,
+            data = submission_media,
+            force_save = True,
+            allow_fail = False
+            )
+    else:
+        # Handle lack of download link
+        if check_if_dl_skip_is_permitted(submission_number,submission_page_html):
+            logging.info("Permitting failure to find download link.")
+            appendlist(
+                lines = repr(submission_number),
+                list_file_path=os.path.join("debug", "submission_linkfind_error.txt"),
+                initial_text="# List of submission IDs where download link could not be found.\r\n"
+                )
+        else:
+            logging.error("Could not find download link!")
+            raise Exception("Could not find download link!")
+
     # Save the submission page last
     # Generate local html filepath
     submission_page_path = generate_html_filepath(
@@ -225,7 +261,7 @@ def save_submission_normal(output_path,submission_number,submission_page_html):
         media_type = "submission",
         media_id = submission_number
         )
-
+    # Save the submission page HTML
     save_file(
         file_path = submission_page_path,
         data = submission_page_html,
@@ -259,6 +295,11 @@ def save_submission(output_path, submission_number):
     if detect_if_submission_exists(submission_page_html) is False:
         logging.error("Submission does not exist.")
         return False# Some submissionIDs are invalid and return a 404
+
+    # Detect if restricted to friends only
+    if detect_if_friends_only(submission_page_html):
+        logging.error("Submission is restricted to friends of the uploader")
+        return False
 
     # Decide how to handle the submission
     if detect_if_bandcamp_submission(submission_page_html) is True:
@@ -342,11 +383,11 @@ def test():
     #save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
     #save_submission(output_path=config.root_path,submission_number=1169192)# text download AND image
     #save_submission(output_path=config.root_path,submission_number=1199683)# text download AND image
-
     #save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
     #save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
-
-    save_submission(output_path=config.root_path,submission_number=1241567)# regular image submission
+    save_submission(output_path=config.root_path,submission_number=10118)# bandcamp, no embed
+    save_submission(output_path=config.root_path,submission_number=10280)# Friends only
+    #save_submission(output_path=config.root_path,submission_number=1241567)# regular image submission
 ##    save_submission_range(
 ##        output_path = config.root_path,
 ##        start_number = 10000,
