@@ -8,20 +8,22 @@
 # Copyright:   (c) User 2016
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
+import argparse
+
 from utils import * # General utility functions
 from weasyl_common import *
 import config # Settings and configuration
 
 
 
-# Character specific
+
 def detect_if_character_exists(html):
     """Detect if this is a page for a noxexistant submission"""
-    journal_exists = True# If no test fails, assume true
-    if """<div id="error_content" class="content">""" in html:
-        if """This character doesn't seem to be in our database.""" in html:
-            journal_exists = False
-    return journal_exists
+    return not (
+        ("""<div id="error_content" class="content">""" in html) and
+        ("""This character doesn't seem to be in our database.""" in html)
+    )
+
 
 
 def save_character(output_path, character_number):
@@ -101,17 +103,38 @@ def save_character_range(output_path,start_number,stop_number):
         save_character(output_path,character_number)
         character_number += 1
     logging.info("Finished saving range of characters:"+repr(start_number)+" to "+repr(stop_number))
-# /Character specific
+
+
+
+def cli():
+    """Accept command line arguments"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('start_num', help='low end of the range to work over',
+                    type=int)
+    parser.add_argument('end_num', help='high end of the range to work over',
+                    type=int)
+    args = parser.parse_args()
+    save_character_range(
+        output_path = config.root_path,
+        start_number = args.start_num,
+        stop_number = args.end_num
+        )
+    return
+
+def test():
+    """Run various test cases"""
+    save_character_range(
+        output_path = config.root_path,
+        start_number = 10000,
+        stop_number = 10009
+        )
+    return
 
 
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_character_log.txt"))
-        save_character_range(
-            output_path = config.root_path,
-            start_number = 10000,
-            stop_number = 10009
-            )
+        cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

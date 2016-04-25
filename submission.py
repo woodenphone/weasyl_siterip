@@ -8,12 +8,14 @@
 # Copyright:   (c) User 2016
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
+import argparse
+
 from utils import * # General utility functions
 from weasyl_common import *
 import config # Settings and configuration
 
 
-# Submission specific
+
 def detect_if_submission_exists(html):
     """Detect if this is a page for a noxexistant submission"""
     submission_exists = True# If no test fails, assume we're logged in
@@ -111,9 +113,7 @@ def save_submission_google_docs(output_path,submission_number,submission_page_ht
 
 
 def save_submission_youtube(output_path,submission_number,submission_page_html):
-    """
-    Save youtube embed submissions
-    """
+    """Save youtube embed submissions"""
     assert(detect_if_youtube_submission(submission_page_html))
     # Generate local html filepath
     submission_page_path = generate_html_filepath(
@@ -132,20 +132,22 @@ def save_submission_youtube(output_path,submission_number,submission_page_html):
 
 
 def save_submission_tag_history(output_path, submission_number):
-    """
-    """
+    """Save the tag history page sor a given submissionID"""
     logging.debug("Saving tag history page...")
     # Load the tag history page
     # https://www.weasyl.com/submission/tag-history/1245327
     tag_history_page_url = "https://www.weasyl.com/submission/tag-history/"+str(submission_number)
     tag_history_page_html = get_url(tag_history_page_url)
-    if tag_history_page_html is None:# Handle failure to load page
+    if tag_history_page_html is None:
+        # Handle failure to load page. Since we grab tag history last, we expect this page to exist.
         logging.error("Could not load tag history page!")
         raise Exception("Could not load tag history page!")
+
     # Ensure we are logged in
     if detect_if_logged_in(tag_history_page_html) is False:
         logging.error("Not logged in, not saving page.")
         raise Exception("Not logged in, not saving page.")
+
     # Save the HTML
     tag_history_filepath = generate_tag_history_filepath(
         root_path = output_path,
@@ -163,9 +165,7 @@ def save_submission_tag_history(output_path, submission_number):
 
 
 def save_submission_normal(output_path,submission_number,submission_page_html):
-    """
-    Save regular image and text submissions
-    """
+    """Save regular image and text submissions"""
     # Save story header image if it exists
     story_header_search = re.search('<div\sid="detail-art">\s+<img\ssrc="([^"]+)"\salt=', submission_page_html, re.IGNORECASE)
     if story_header_search:
@@ -246,18 +246,19 @@ def save_submission(output_path, submission_number):
     submission_page_html = get_url(submission_page_url)
     if submission_page_html is None:# Handle failure to load page
         logging.error("Could not load submission page!")
-        return False
+        return False# Some submissionIDs are invalid and return a 404
         #raise Exception("Could not load submission page!")
 
     # Ensure we are logged in
     if detect_if_logged_in(submission_page_html) is False:
+        # We should ALWAYS be logged in
         logging.error("Not logged in, not saving page.")
         raise Exception("Not logged in, not saving page.")
 
     # Detect if sumbission is noexistant
     if detect_if_submission_exists(submission_page_html) is False:
         logging.error("Submission does not exist.")
-        return False
+        return False# Some submissionIDs are invalid and return a 404
 
     # Decide how to handle the submission
     if detect_if_bandcamp_submission(submission_page_html) is True:
@@ -303,22 +304,43 @@ def save_submission_range(output_path,start_number,stop_number):
         save_submission(output_path,submission_number)
         submission_number += 1
     logging.info("Finished saving range of submissions:"+repr(start_number)+" to "+repr(stop_number))
-# /Submission specific
+
+
+
+def cli():
+    """Accept command line arguments"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('start_num', help='low end of the range to work over',
+                    type=int)
+    parser.add_argument('end_num', help='high end of the range to work over',
+                    type=int)
+    args = parser.parse_args()
+    save_submission_range(
+        output_path = config.root_path,
+        start_number = args.start_num,
+        stop_number = args.end_num
+        )
+    return
+
+
+def test():
+    """Run various test cases"""
+    save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
+    save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
+    save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
+    # /Tests
+    save_submission_range(
+        output_path = config.root_path,
+        start_number = 10000,
+        stop_number = 10099
+        )
+    return
 
 
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_submission_log.txt"))
-        # Tests
-        save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
-        save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
-        save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
-        # /Tests
-        save_submission_range(
-            output_path = config.root_path,
-            start_number = 10000,
-            stop_number = 10099
-            )
+        cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)
