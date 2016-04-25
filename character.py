@@ -103,13 +103,13 @@ def save_character_range(output_path,start_number,stop_number):
         sucess = save_character(output_path,character_number)
         if success:
             appendlist(
-                lines,
+                lines = repr(submission_number),
                 list_file_path=os.path.join("debug", "character_success.txt"),
                 initial_text="# List of successfully grabbed character IDs.\r\n"
                 )
         else:
             appendlist(
-                lines,
+                lines = repr(submission_number),
                 list_file_path=os.path.join("debug", "character_fail.txt"),
                 initial_text="# List of failed character IDs.\r\n"
                 )

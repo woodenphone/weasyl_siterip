@@ -71,13 +71,13 @@ def save_journal_range(output_path,start_number,stop_number):
         save_journal(output_path,journal_number)
         if success:
             appendlist(
-                lines,
+                lines = repr(submission_number),
                 list_file_path=os.path.join("debug", "journal_success.txt"),
                 initial_text="# List of successfully grabbed journal IDs.\r\n"
                 )
         else:
             appendlist(
-                lines,
+                lines = repr(submission_number),
                 list_file_path=os.path.join("debug", "journal_fail.txt"),
                 initial_text="# List of failed journal IDs.\r\n"
                 )

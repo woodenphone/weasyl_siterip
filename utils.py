@@ -198,11 +198,11 @@ def getwithinfo(url):
     assert_is_string(url)
     deescaped_url = deescape(url)
     url_with_protocol = add_http(deescaped_url)
-    # Remove all ssl because ATC said to
-    # http://stackoverflow.com/questions/19268548/python-ignore-certicate-validation-urllib2
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+##    # Remove all ssl because ATC said to
+##    # http://stackoverflow.com/questions/19268548/python-ignore-certicate-validation-urllib2
+##    ctx = ssl.create_default_context()
+##    ctx.check_hostname = False
+##    ctx.verify_mode = ssl.CERT_NONE
 
     while attemptcount < max_attempts:
         attemptcount = attemptcount + 1
@@ -221,7 +221,7 @@ def getwithinfo(url):
             request.add_header("X-Weasyl-API-Key", config.weasyl_api_key)
             r = urllib2.urlopen(
                 request,
-                context=ctx
+##                context=ctx
                 )
             info = r.info()
             reply = r.read()
@@ -250,8 +250,6 @@ def getwithinfo(url):
             return reply,info,r
 
         except urllib2.HTTPError, err:
-            logging.exception(err)
-            logging.error(repr(err))
             if err.code == 404:
                 logging.error("404 error! "+repr(url))
                 return
@@ -262,6 +260,8 @@ def getwithinfo(url):
                 logging.error("410 error, GONE")
                 return
             else:
+                logging.exception(err)
+                logging.error(repr(err))
                 save_file(
                     file_path = os.path.join("debug","HTTPError.htm"),
                     data = err.fp.read(),
