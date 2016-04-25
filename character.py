@@ -100,8 +100,21 @@ def save_character(output_path, character_number):
 def save_character_range(output_path,start_number,stop_number):
     logging.info("Saving range of characters:"+repr(start_number)+" to "+repr(stop_number))
     for character_number in xrange(start_number,stop_number):
-        save_character(output_path,character_number)
+        sucess = save_character(output_path,character_number)
+        if success:
+            appendlist(
+                lines,
+                list_file_path=os.path.join("debug", "character_success.txt"),
+                initial_text="# List of successfully grabbed character IDs.\r\n"
+                )
+        else:
+            appendlist(
+                lines,
+                list_file_path=os.path.join("debug", "character_fail.txt"),
+                initial_text="# List of failed character IDs.\r\n"
+                )
         character_number += 1
+        continue
     logging.info("Finished saving range of characters:"+repr(start_number)+" to "+repr(stop_number))
 
 

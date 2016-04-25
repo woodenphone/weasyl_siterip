@@ -301,8 +301,21 @@ def save_submission(output_path, submission_number):
 def save_submission_range(output_path,start_number,stop_number):
     logging.info("Saving range of submissions:"+repr(start_number)+" to "+repr(stop_number))
     for submission_number in xrange(start_number,stop_number):
-        save_submission(output_path,submission_number)
+        success = save_submission(output_path,submission_number)
+        if success:
+            appendlist(
+                lines,
+                list_file_path=os.path.join("debug", "submission_success.txt"),
+                initial_text="# List of successfully grabbed submission IDs.\r\n"
+                )
+        else:
+            appendlist(
+                lines,
+                list_file_path=os.path.join("debug", "submission_fail.txt"),
+                initial_text="# List of failed submission IDs.\r\n"
+                )
         submission_number += 1
+        continue
     logging.info("Finished saving range of submissions:"+repr(start_number)+" to "+repr(stop_number))
 
 
