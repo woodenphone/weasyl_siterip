@@ -325,21 +325,28 @@ def cli():
 
 def test():
     """Run various test cases"""
-    save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
-    save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
-    save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
-    # /Tests
-    save_submission_range(
-        output_path = config.root_path,
-        start_number = 10000,
-        stop_number = 10099
-        )
+    logging.info('running test cases')
+    #save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
+    #save_submission(output_path=config.root_path,submission_number=1169192)# text download AND image
+    #save_submission(output_path=config.root_path,submission_number=1199683)# text download AND image
+
+    #save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
+    #save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
+
+    save_submission(output_path=config.root_path,submission_number=1241567)# regular image submission
+##    save_submission_range(
+##        output_path = config.root_path,
+##        start_number = 10000,
+##        stop_number = 10099
+##        )
+    logging.info('finished test cases')
     return
 
 
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_submission_log.txt"))
+        #test()
         cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
