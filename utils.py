@@ -183,8 +183,6 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
         'user-agent': 'https://github.com/woodenphone/weasyl_siterip',
         "X-Weasyl-API-Key": config.weasyl_api_key,
         }
-
-
     if headers:
         headers.update(headers)
 
@@ -205,7 +203,6 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
                 print_('404!.')
                 return None
 
-
             if response.status_code != expect_status:
                 print_('Problem detected. Sleeping.')
                 time.sleep(60)
@@ -215,7 +212,9 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
         except requests.exceptions.Timeout, err:
             logging.exception(err)
             continue
-
+        except requests.exceptions.ConnectionError, err:
+            logging.exception(err)
+            continue
 
     raise Exception('Giving up!')
 
