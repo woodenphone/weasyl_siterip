@@ -17,7 +17,7 @@ import config # Settings and configuration
 
 
 def detect_if_journal_exists(html):
-    """Detect if this is a page for a noxexistant submission"""
+    """Detect if this is a page for a noxexistant journal"""
     return not (
         ("""<div id="error_content" class="content">""" in html) and
         ("""This journal doesn't seem to be in our database. """ in html)
@@ -32,7 +32,7 @@ def save_journal(output_path, journal_number):
     # Load the journal page
     journal_page_url = "https://www.weasyl.com/journal/"+str(journal_number)
     logging.debug("journal_page_url: "+repr(journal_page_url))
-    journal_page_html = get_url(journal_page_url)
+    journal_page_html = get_url_requests(journal_page_url)
     if journal_page_html is None:# Handle failure to load page
         logging.error("Could not load journal page!")
         return False
@@ -68,16 +68,16 @@ def save_journal(output_path, journal_number):
 def save_journal_range(output_path,start_number,stop_number):
     logging.info("Saving range of journals:"+repr(start_number)+" to "+repr(stop_number))
     for journal_number in xrange(start_number,stop_number):
-        save_journal(output_path,journal_number)
+        success = save_journal(output_path,journal_number)
         if success:
             appendlist(
-                lines = repr(submission_number),
+                lines = repr(journal_number),
                 list_file_path=os.path.join("debug", "journal_success.txt"),
                 initial_text="# List of successfully grabbed journal IDs.\r\n"
                 )
         else:
             appendlist(
-                lines = repr(submission_number),
+                lines = repr(journal_number),
                 list_file_path=os.path.join("debug", "journal_fail.txt"),
                 initial_text="# List of failed journal IDs.\r\n"
                 )
@@ -116,7 +116,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_journal_log.txt"))
-        cli()
+        test()
+        #cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

@@ -83,7 +83,7 @@ def save_bandcamp_submission(output_path,submission_number,submission_page_html)
     # https://cdn.weasyl.com/static/media/54/69/65/54696582851bc2c17969cd364e555fbe6db792a1d19c6dcb1f715eff89429aeb.png
     submission_image_link_search = re.search('''<div\s+id="detail-art">\s+<img\s+src="([^"'<>\n]+)"''', submission_page_html, re.IGNORECASE)
     submission_image_link = submission_image_link_search.group(1)
-    submission_image = get_url(submission_image_link)
+    submission_image = get_url_requests(submission_image_link)
     submission_image_filename = os.path.basename(submission_image_link)
     # Generate local media filepath
     submission_media_path = generate_media_filepath(
@@ -121,7 +121,7 @@ def save_submission_tag_history(output_path, submission_number):
     # Load the tag history page
     # https://www.weasyl.com/submission/tag-history/1245327
     tag_history_page_url = "https://www.weasyl.com/submission/tag-history/"+str(submission_number)
-    tag_history_page_html = get_url(tag_history_page_url)
+    tag_history_page_html = get_url_requests(tag_history_page_url)
     if tag_history_page_html is None:
         # Handle failure to load page. Since we grab tag history last, we expect this page to exist.
         logging.error("Could not load tag history page!")
@@ -165,7 +165,7 @@ def save_submission_normal(output_path,submission_number,submission_page_html):
             media_filename = story_header_filename
             )
         # Save the image
-        story_header_data = get_url(story_header_link)
+        story_header_data = get_url_requests(story_header_link)
         if not story_header_data:
             raise exception("Failed to load story header image!")
         save_file(
@@ -182,7 +182,7 @@ def save_submission_normal(output_path,submission_number,submission_page_html):
     if download_link_search:
         submission_media_link = download_link_search.group(1)# 'https://cdn.weasyl.com/~bunny/submissions/9000/1aeeaa6032d590e2f3692cba05ad95ac9090b61098cc720833f88c5abd03ea27/bunny-ashes-badge.png?'
 
-        submission_media = get_url(submission_media_link)
+        submission_media = get_url_requests(submission_media_link)
         if submission_media is None:
             logging.error("Could not load submission media!")
             raise Exception("Could not load submission media!")
@@ -230,7 +230,7 @@ def save_submission(output_path, submission_number):
     # Load the submission page
     submission_page_url = "https://www.weasyl.com/submission/"+str(submission_number)
     logging.debug("submission_page_url: "+repr(submission_page_url))
-    submission_page_html = get_url(submission_page_url)
+    submission_page_html = get_url_requests(submission_page_url)
     if submission_page_html is None:# Handle failure to load page
         logging.error("Could not load submission page!")
         return False# Some submissionIDs are invalid and return a 404
@@ -345,16 +345,17 @@ def cli():
 
 
 def test():
-    """Run various test cases"""
+    """Run various test cases.
+    HINT: Wipe the download folder so you get clean results."""
     logging.info('running test cases')
-    #save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
-    #save_submission(output_path=config.root_path,submission_number=1169192)# text download AND image
-    #save_submission(output_path=config.root_path,submission_number=1199683)# text download AND image
-    #save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
-    #save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
+    save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
+    save_submission(output_path=config.root_path,submission_number=1169192)# text download AND image
+    save_submission(output_path=config.root_path,submission_number=1199683)# text download AND image
+    save_submission(output_path=config.root_path,submission_number=1221326)# googledocs, no download link
+    save_submission(output_path=config.root_path,submission_number=1241596)# youtube, no download link
     save_submission(output_path=config.root_path,submission_number=10118)# bandcamp, no embed
     save_submission(output_path=config.root_path,submission_number=10280)# Friends only
-    #save_submission(output_path=config.root_path,submission_number=1241567)# regular image submission
+    save_submission(output_path=config.root_path,submission_number=1241567)# regular image submission
 ##    save_submission_range(
 ##        output_path = config.root_path,
 ##        start_number = 10000,
@@ -367,8 +368,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_submission_log.txt"))
-        test()
-        #cli()
+        #test()
+        cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

@@ -18,7 +18,7 @@ import config # Settings and configuration
 
 
 def detect_if_character_exists(html):
-    """Detect if this is a page for a noxexistant submission"""
+    """Detect if this is a page for a noxexistant character"""
     return not (
         ("""<div id="error_content" class="content">""" in html) and
         ("""This character doesn't seem to be in our database.""" in html)
@@ -34,7 +34,7 @@ def save_character(output_path, character_number):
     # Load the character page
     character_page_url = "https://www.weasyl.com/character/"+str(character_number)
     logging.debug("character_page_url: "+repr(character_page_url))
-    character_page_html = get_url(character_page_url)
+    character_page_html = get_url_requests(character_page_url)
     if character_page_html is None:# Handle failure to load page
         logging.error("Could not load character page!")
         return False
@@ -55,7 +55,7 @@ def save_character(output_path, character_number):
     character_media_link = download_link_search.group(1)
     logging.debug("character_media_link: "+repr(character_media_link))
     # Open the download link
-    character_media = get_url(character_media_link)
+    character_media = get_url_requests(character_media_link)
     if character_media is None:
         logging.error("Could not load character media!")
         raise Exception("Could not load character media!")
@@ -67,7 +67,7 @@ def save_character(output_path, character_number):
     character_media_path = generate_media_filepath(
         root_path = output_path,
         media_type = "character",
-        media_id = submission_number,
+        media_id = character_number,
         media_filename = media_filename
         )
 
@@ -100,16 +100,16 @@ def save_character(output_path, character_number):
 def save_character_range(output_path,start_number,stop_number):
     logging.info("Saving range of characters:"+repr(start_number)+" to "+repr(stop_number))
     for character_number in xrange(start_number,stop_number):
-        sucess = save_character(output_path,character_number)
+        success = save_character(output_path,character_number)
         if success:
             appendlist(
-                lines = repr(submission_number),
+                lines = repr(character_number),
                 list_file_path=os.path.join("debug", "character_success.txt"),
                 initial_text="# List of successfully grabbed character IDs.\r\n"
                 )
         else:
             appendlist(
-                lines = repr(submission_number),
+                lines = repr(character_number),
                 list_file_path=os.path.join("debug", "character_fail.txt"),
                 initial_text="# List of failed character IDs.\r\n"
                 )
@@ -147,7 +147,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_character_log.txt"))
-        cli()
+        test()
+        #cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

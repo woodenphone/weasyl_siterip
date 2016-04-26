@@ -8,7 +8,9 @@
 # Copyright:   (c) User 2015
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
-
+from __future__ import print_function
+import requests
+import requests.exceptions
 
 import time
 import datetime
@@ -116,7 +118,7 @@ def save_file(file_path,data,force_save=False,allow_fail=False):
                 try:
                     os.makedirs(foldername)
                 except WindowsError, err:
-                    pass
+                    logging.exception(err)
         try:
             file = open(file_path, "wb")
             file.write(data)
@@ -170,10 +172,18 @@ def deescape(html):
     return deescaped_string
 
 
+def print_(*args, **kwargs):
+    print(*args, **kwargs)
+    sys.stdout.flush()
+
 
 def fetch(url, method='get', data=None, expect_status=200, headers=None):
 #    headers = {'user-agent': user_agent}
-    headers = {'user-agent': 'test'}
+    headers = {
+        'user-agent': 'https://github.com/woodenphone/weasyl_siterip',
+        "X-Weasyl-API-Key": config.weasyl_api_key,
+        }
+
 
     if headers:
         headers.update(headers)
@@ -190,6 +200,11 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
 
         print_(str(response.status_code))
 
+        if response.status_code == 404:
+            print_('404!.')
+            return None
+
+
         if response.status_code != expect_status:
             print_('Problem detected. Sleeping.')
             time.sleep(60)
@@ -203,147 +218,150 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
 
 def get_url_requests(url):
     response = fetch(url, method='get', data=None, expect_status=200, headers=None)
-    return response.content
-
-
-
-
-def get_url(url):
-    #try to retreive a url. If unable to return None object
-    #Example useage:
-    #html = get_url("")
-    #if html:
-    #logging.debug( "getting url ", locals())
-    gettuple = getwithinfo(url)
-    if gettuple:
-        reply, info, r = gettuple
-        return reply
+    if response:
+        return response.content
     else:
-        return
+        return None
 
-def getwithinfo(url):
-    """Try to retreive a url.
-    If successful return (reply,info,request)
-    If unable to return None objects
-    Example useage:
-    html = get_url("")
-        if html:
-    """
-    attemptcount = 0
-    max_attempts = 10
-    retry_delay = 2
-    request_delay = 0.0
-    assert_is_string(url)
-    deescaped_url = deescape(url)
-    url_with_protocol = add_http(deescaped_url)
-##    # Remove all ssl because ATC said to
-##    # http://stackoverflow.com/questions/19268548/python-ignore-certicate-validation-urllib2
-##    ctx = ssl.create_default_context()
-##    ctx.check_hostname = False
-##    ctx.verify_mode = ssl.CERT_NONE
 
-    while attemptcount < max_attempts:
-        attemptcount = attemptcount + 1
-        if attemptcount > 1:
-            delay(retry_delay)
-            logging.debug( "Attempt "+repr(attemptcount)+" for URL: "+repr(url) )
-        try:
-##            save_file(
-##                file_path = os.path.join("debug","get_last_url.txt"),
-##                data = url,
-##                force_save = True,
-##                allow_fail = True
+
+
+##def get_url(url):
+##    #try to retreive a url. If unable to return None object
+##    #Example useage:
+##    #html = get_url("")
+##    #if html:
+##    #logging.debug( "getting url ", locals())
+##    gettuple = getwithinfo(url)
+##    if gettuple:
+##        reply, info, r = gettuple
+##        return reply
+##    else:
+##        return
+##
+##def getwithinfo(url):
+##    """Try to retreive a url.
+##    If successful return (reply,info,request)
+##    If unable to return None objects
+##    Example useage:
+##    html = get_url("")
+##        if html:
+##    """
+##    attemptcount = 0
+##    max_attempts = 10
+##    retry_delay = 2
+##    request_delay = 0.0
+##    assert_is_string(url)
+##    deescaped_url = deescape(url)
+##    url_with_protocol = add_http(deescaped_url)
+####    # Remove all ssl because ATC said to
+####    # http://stackoverflow.com/questions/19268548/python-ignore-certicate-validation-urllib2
+####    ctx = ssl.create_default_context()
+####    ctx.check_hostname = False
+####    ctx.verify_mode = ssl.CERT_NONE
+##
+##    while attemptcount < max_attempts:
+##        attemptcount = attemptcount + 1
+##        if attemptcount > 1:
+##            delay(retry_delay)
+##            logging.debug( "Attempt "+repr(attemptcount)+" for URL: "+repr(url) )
+##        try:
+####            save_file(
+####                file_path = os.path.join("debug","get_last_url.txt"),
+####                data = url,
+####                force_save = True,
+####                allow_fail = True
+####                )
+##            request = urllib2.Request(url_with_protocol)
+##            request.add_header("User-agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1")
+##            request.add_header("X-Weasyl-API-Key", config.weasyl_api_key)
+##            r = urllib2.urlopen(
+##                request,
+####                context=ctx
 ##                )
-            request = urllib2.Request(url_with_protocol)
-            request.add_header("User-agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1")
-            request.add_header("X-Weasyl-API-Key", config.weasyl_api_key)
-            r = urllib2.urlopen(
-                request,
-##                context=ctx
-                )
-            info = r.info()
-            reply = r.read()
-            delay(request_delay)
-
-            # Save html responses for debugging
-            if "html" in info["content-type"]:
-                save_file(
-                    file_path = os.path.join("debug","get_last_html.htm"),
-                    data = reply,
-                    force_save = True,
-                    allow_fail = True
-                    )
-##            else:
-##                pass
+##            info = r.info()
+##            reply = r.read()
+##            delay(request_delay)
+##
+##            # Save html responses for debugging
+##            if "html" in info["content-type"]:
 ##                save_file(
-##                    file_path = os.path.join("debug","get_last_not_html.txt"),
+##                    file_path = os.path.join("debug","get_last_html.htm"),
 ##                    data = reply,
 ##                    force_save = True,
 ##                    allow_fail = True
 ##                    )
-            # Retry if empty response and not last attempt
-            if (len(reply) < 1) and (attemptcount < max_attempts):
-                logging.error("Reply too short :"+repr(reply))
-                continue
-            return reply,info,r
-
-        except urllib2.HTTPError, err:
-            if err.code == 404:
-                logging.error("404 error! "+repr(url))
-                return
-            elif err.code == 403:
-                logging.error("403 error, ACCESS DENIED! url: "+repr(url))
-                return
-            elif err.code == 410:
-                logging.error("410 error, GONE")
-                return
-            else:
-                logging.exception(err)
-                logging.error(repr(err))
-                save_file(
-                    file_path = os.path.join("debug","HTTPError.htm"),
-                    data = err.fp.read(),
-                    force_save = True,
-                    allow_fail = True
-                    )
-                continue
-
-        except urllib2.URLError, err:
-            logging.exception(err)
-            logging.error(repr(err))
-            if "unknown url type:" in err.reason:
-                return
-            else:
-                continue
-
-        except httplib.BadStatusLine, err:
-            logging.exception(err)
-            logging.error(repr(err))
-            continue
-
-        except httplib.IncompleteRead, err:
-            logging.exception(err)
-            logging.error(repr(err))
-            logging.exception(err)
-            continue
-
-        except socket.timeout, err:
-            logging.exception(err)
-            logging.error(repr( type(err) ) )
-            logging.error(repr(err))
-            continue
-
-        except Exception, err:
-            logging.exception(err)
-            # We have to do this because socket.py just uses "raise"
-            logging.error("getwithinfo() caught an exception")
-            logging.error("getwithinfo() repr(err):"+repr(err))
-            logging.error("getwithinfo() str(err):"+str(err))
-            logging.error("getwithinfo() type(err):"+repr(type(err)))
-            continue
-
-    logging.error("Too many retries, failing.")
-    return
+####            else:
+####                pass
+####                save_file(
+####                    file_path = os.path.join("debug","get_last_not_html.txt"),
+####                    data = reply,
+####                    force_save = True,
+####                    allow_fail = True
+####                    )
+##            # Retry if empty response and not last attempt
+##            if (len(reply) < 1) and (attemptcount < max_attempts):
+##                logging.error("Reply too short :"+repr(reply))
+##                continue
+##            return reply,info,r
+##
+##        except urllib2.HTTPError, err:
+##            if err.code == 404:
+##                logging.error("404 error! "+repr(url))
+##                return
+##            elif err.code == 403:
+##                logging.error("403 error, ACCESS DENIED! url: "+repr(url))
+##                return
+##            elif err.code == 410:
+##                logging.error("410 error, GONE")
+##                return
+##            else:
+##                logging.exception(err)
+##                logging.error(repr(err))
+##                save_file(
+##                    file_path = os.path.join("debug","HTTPError.htm"),
+##                    data = err.fp.read(),
+##                    force_save = True,
+##                    allow_fail = True
+##                    )
+##                continue
+##
+##        except urllib2.URLError, err:
+##            logging.exception(err)
+##            logging.error(repr(err))
+##            if "unknown url type:" in err.reason:
+##                return
+##            else:
+##                continue
+##
+##        except httplib.BadStatusLine, err:
+##            logging.exception(err)
+##            logging.error(repr(err))
+##            continue
+##
+##        except httplib.IncompleteRead, err:
+##            logging.exception(err)
+##            logging.error(repr(err))
+##            logging.exception(err)
+##            continue
+##
+##        except socket.timeout, err:
+##            logging.exception(err)
+##            logging.error(repr( type(err) ) )
+##            logging.error(repr(err))
+##            continue
+##
+##        except Exception, err:
+##            logging.exception(err)
+##            # We have to do this because socket.py just uses "raise"
+##            logging.error("getwithinfo() caught an exception")
+##            logging.error("getwithinfo() repr(err):"+repr(err))
+##            logging.error("getwithinfo() str(err):"+str(err))
+##            logging.error("getwithinfo() type(err):"+repr(type(err)))
+##            continue
+##
+##    logging.error("Too many retries, failing.")
+##    return
 
 
 def assert_is_string(object_to_test):
