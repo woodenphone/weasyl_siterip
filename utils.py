@@ -189,28 +189,33 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
         headers.update(headers)
 
     for try_num in range(5):
-        print_('Fetch', url, '...', end='')
+        try:
+            print_('Fetch', url, '...', end='')
 
-        if method == 'get':
-            response = requests.get(url, headers=headers, timeout=60)
-        elif method == 'post':
-            response = requests.post(url, headers=headers, data=data, timeout=60)
-        else:
-            raise Exception('Unknown method')
+            if method == 'get':
+                response = requests.get(url, headers=headers, timeout=60)
+            elif method == 'post':
+                response = requests.post(url, headers=headers, data=data, timeout=60)
+            else:
+                raise Exception('Unknown method')
 
-        print_(str(response.status_code))
+            print_(str(response.status_code))
 
-        if response.status_code == 404:
-            print_('404!.')
-            return None
+            if response.status_code == 404:
+                print_('404!.')
+                return None
 
 
-        if response.status_code != expect_status:
-            print_('Problem detected. Sleeping.')
-            time.sleep(60)
-        else:
-            time.sleep(random.uniform(0.5, 1.5))
-            return response
+            if response.status_code != expect_status:
+                print_('Problem detected. Sleeping.')
+                time.sleep(60)
+            else:
+                time.sleep(random.uniform(0.5, 1.5))
+                return response
+        except requests.exceptions.Timeout, err:
+            logging.exception(err)
+            continue
+
 
     raise Exception('Giving up!')
 
