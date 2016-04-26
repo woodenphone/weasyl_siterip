@@ -16,6 +16,18 @@ import config # Settings and configuration
 
 
 
+def check_if_dl_skip_is_permitted(submission_number,submission_page_html):
+    """Decide if, after failing to find a download link, to keep going as normal"""
+    return (
+        ('<dt>Category:</dt> <dd>Multimedia' in submission_page_html) and# Media (audio/video) catgory
+        ('<dt>Category:</dt> <dd>Visual' not in submission_page_html) and# Visual (Pictures) category
+        ('<!-- VISUAL -->' not in submission_page_html) and# submission picture box
+        ('<div id="detail-art">' not in submission_page_html) and# Submission media view box
+        ('<!-- /detail-art -->' not in submission_page_html) and# Submission media view box
+        ('?download">' not in submission_page_html)# Submission download link
+        )
+
+
 def detect_if_submission_exists(html):
     """Detect if this is a page for a noxexistant submission"""
     submission_exists = True# If no test fails, assume we're logged in
@@ -23,6 +35,7 @@ def detect_if_submission_exists(html):
         if """This submission doesn't seem to be in our database.""" in html:
             submission_exists = False
     return submission_exists
+
 
 def detect_if_friends_only(html):
     """Detect if a submission page is restricted to friends of the uploader"""
@@ -85,68 +98,21 @@ def save_bandcamp_submission(output_path,submission_number,submission_page_html)
         force_save = True,
         allow_fail = False
         )
-    submission_page_path = generate_html_filepath(
-        root_path = output_path,
-        media_type = "submission",
-        media_id = submission_number
-        )
-    save_file(
-        file_path = submission_page_path,
-        data = submission_page_html,
-        force_save = True,
-        allow_fail = False
-        )
     return True
 
 
-def save_submission_google_docs(output_path,submission_number,submission_page_html):
-    """
-    Save google docs submissions
-    """
-    assert(detect_if_googledocs_submission(submission_page_html))
-    # Generate local html filepath
-    submission_page_path = generate_html_filepath(
-        root_path = output_path,
-        media_type = "submission",
-        media_id = submission_number
-        )
-    save_file(
-        file_path = submission_page_path,
-        data = submission_page_html,
-        force_save = True,
-        allow_fail = False
-        )
-    return True
-
-
-def save_submission_youtube(output_path,submission_number,submission_page_html):
-    """Save youtube embed submissions"""
-    assert(detect_if_youtube_submission(submission_page_html))
-    # Generate local html filepath
-    submission_page_path = generate_html_filepath(
-        root_path = output_path,
-        media_type = "submission",
-        media_id = submission_number
-        )
-    save_file(
-        file_path = submission_page_path,
-        data = submission_page_html,
-        force_save = True,
-        allow_fail = False
-        )
-    return True
-
-
-def check_if_dl_skip_is_permitted(submission_number,submission_page_html):
-    """Decide if, after failing to find a download link, to keep going as normal"""
-    return (
-        ('<dt>Category:</dt> <dd>Multimedia' in submission_page_html) and# Media (audio/video) catgory
-        ('<dt>Category:</dt> <dd>Visual' not in submission_page_html) and# Visual (Pictures) category
-        ('<!-- VISUAL -->' not in submission_page_html) and# submission picture box
-        ('<div id="detail-art">' not in submission_page_html) and# Submission media view box
-        ('<!-- /detail-art -->' not in submission_page_html) and# Submission media view box
-        ('?download">' not in submission_page_html)# Submission download link
-        )
+##def save_submission_google_docs(output_path,submission_number,submission_page_html):
+##    """
+##    Save google docs submissions
+##    """
+##    assert(detect_if_googledocs_submission(submission_page_html))
+##    return True
+##
+##
+##def save_submission_youtube(output_path,submission_number,submission_page_html):
+##    """Save youtube embed submissions"""
+##    assert(detect_if_youtube_submission(submission_page_html))
+##    return True
 
 
 def save_submission_tag_history(output_path, submission_number):
@@ -253,21 +219,6 @@ def save_submission_normal(output_path,submission_number,submission_page_html):
         else:
             logging.error("Could not find download link!")
             raise Exception("Could not find download link!")
-
-    # Save the submission page last
-    # Generate local html filepath
-    submission_page_path = generate_html_filepath(
-        root_path = output_path,
-        media_type = "submission",
-        media_id = submission_number
-        )
-    # Save the submission page HTML
-    save_file(
-        file_path = submission_page_path,
-        data = submission_page_html,
-        force_save = True,
-        allow_fail = False
-        )
     return True
 
 
@@ -302,7 +253,7 @@ def save_submission(output_path, submission_number):
         return False
 
     # Decide how to handle the submission
-    if detect_if_bandcamp_submission(submission_page_html) is True:
+    if detect_if_bandcamp_submission(submission_page_html):
         # Handle bandcamp submission
         logging.warning("Submission is bandcamp..")
         save_bandcamp_submission(
@@ -313,19 +264,19 @@ def save_submission(output_path, submission_number):
     elif detect_if_googledocs_submission(submission_page_html):
         # Handle google docs submission
         logging.warning("Submission is googledocs, only saving html.")
-        save_submission_google_docs(
-            output_path,
-            submission_number,
-            submission_page_html
-            )
+##        save_submission_google_docs(
+##            output_path,
+##            submission_number,
+##            submission_page_html
+##            )
     elif detect_if_youtube_submission(submission_page_html):
         # Handle youtube submission
         logging.warning("Submission is youtube, only saving html.")
-        save_submission_youtube(
-            output_path,
-            submission_number,
-            submission_page_html
-            )
+##        save_submission_youtube(
+##            output_path,
+##            submission_number,
+##            submission_page_html
+##            )
     else:
         # Handle normal image or story submission
         save_submission_normal(
@@ -333,9 +284,25 @@ def save_submission(output_path, submission_number):
             submission_number,
             submission_page_html
             )
+
     # Save the tags
     save_submission_tag_history(output_path, submission_number)
     logging.debug("Finished saving submission_number: "+repr(submission_number))
+
+    # Save the submission page last
+    # Generate local html filepath
+    submission_page_path = generate_html_filepath(
+        root_path = output_path,
+        media_type = "submission",
+        media_id = submission_number
+        )
+    # Save the submission page HTML
+    save_file(
+        file_path = submission_page_path,
+        data = submission_page_html,
+        force_save = True,
+        allow_fail = False
+        )
     return True
 
 
@@ -400,8 +367,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_submission_log.txt"))
-        #test()
-        cli()
+        test()
+        #cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

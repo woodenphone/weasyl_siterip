@@ -170,6 +170,44 @@ def deescape(html):
     return deescaped_string
 
 
+
+def fetch(url, method='get', data=None, expect_status=200, headers=None):
+#    headers = {'user-agent': user_agent}
+    headers = {'user-agent': 'test'}
+
+    if headers:
+        headers.update(headers)
+
+    for try_num in range(5):
+        print_('Fetch', url, '...', end='')
+
+        if method == 'get':
+            response = requests.get(url, headers=headers, timeout=60)
+        elif method == 'post':
+            response = requests.post(url, headers=headers, data=data, timeout=60)
+        else:
+            raise Exception('Unknown method')
+
+        print_(str(response.status_code))
+
+        if response.status_code != expect_status:
+            print_('Problem detected. Sleeping.')
+            time.sleep(60)
+        else:
+            time.sleep(random.uniform(0.5, 1.5))
+            return response
+
+    raise Exception('Giving up!')
+
+
+
+def get_url_requests(url):
+    response = fetch(url, method='get', data=None, expect_status=200, headers=None)
+    return response.content
+
+
+
+
 def get_url(url):
     #try to retreive a url. If unable to return None object
     #Example useage:
