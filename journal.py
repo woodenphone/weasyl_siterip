@@ -116,8 +116,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_journal_log.txt"))
-        test()
-        #cli()
+        #test()
+        cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

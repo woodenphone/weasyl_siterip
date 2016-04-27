@@ -215,6 +215,9 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
         except requests.exceptions.ConnectionError, err:
             logging.exception(err)
             continue
+        except ssl.SSLError, err:
+            logging.exception(err)
+            continue
 
     raise Exception('Giving up!')
 
