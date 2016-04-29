@@ -18,14 +18,26 @@ import config # Settings and configuration
 
 def check_if_dl_skip_is_permitted(submission_number,submission_page_html):
     """Decide if, after failing to find a download link, to keep going as normal"""
-    return (
+    if (
         ('<dt>Category:</dt> <dd>Multimedia' in submission_page_html) and# Media (audio/video) catgory
         ('<dt>Category:</dt> <dd>Visual' not in submission_page_html) and# Visual (Pictures) category
         ('<!-- VISUAL -->' not in submission_page_html) and# submission picture box
         ('<div id="detail-art">' not in submission_page_html) and# Submission media view box
         ('<!-- /detail-art -->' not in submission_page_html) and# Submission media view box
         ('?download">' not in submission_page_html)# Submission download link
-        )
+    ):
+        return True
+    elif(
+        ('<dt>Category:</dt> <dd>Multimedia' in submission_page_html) and# Media (audio/video) catgory
+        ('<dt>Category:</dt> <dd>Visual' not in submission_page_html) and# Visual (Pictures) category
+        ('<!-- embedded -->' in submission_page_html,) and
+        ('<!-- VISUAL -->' not in submission_page_html) and# submission picture box
+        ('detail-embed' in submission_page_html,) and
+        ('?download' not in submission_page_html)# Submission download link
+    ):
+        return True
+    return False
+
 
 
 def detect_if_submission_exists(html):
@@ -42,23 +54,49 @@ def detect_if_friends_only(html):
     return(
         ('This page contains content that you cannot view because the page owner has allowed only friends to access it.' in html) and
         ('?download">' not in html)# Submission download link
-        )
+    )
 
 
 def detect_if_bandcamp_submission(html):
     """Return True if submission html is a bandcamp embed submission"""
-    return ("""src="https://bandcamp.com/EmbeddedPlayer/""" in html)
+    return (
+        ("""src="https://bandcamp.com/EmbeddedPlayer/""" in html)
+    )
 
 
 def detect_if_youtube_submission(html):
     """Return True if submission html is a youtube embed submission"""
-    return ("""src="https://www.youtube.com/embed/""" in html)
+    return (
+        ("""src="https://www.youtube.com/embed/""" in html)
+    )
 
 
 def detect_if_googledocs_submission(html):
     """Return True if submission html is a google documents embed submission"""
     #src="https://docs.google.com/document/d/188lEgSsvNCOUQTVGQ465x8gLboOpadegeXEEjqAxDIo/pub?embedded=true" class="content gdoc"
-    return ( ("""src="https://docs.google.com/document/""" in html) and ("""class="content gdoc""" in html) )
+    return (
+        ("""src="https://docs.google.com/document/""" in html) and
+        ("""class="content gdoc""" in html)
+    )
+
+
+##def detect_submission_category(html):
+##    """Figure out the category of the submission.
+##    Possible types:
+##        'multimedia' - Audio/video/swf
+##        'literary' - .txt/.md/.pdf/google drive (Can also have a header image)
+##        'visual' - Pictures
+##    """
+##    if '<dt>Category:</dt> <dd>Multimedia' in html:
+##        return 'multimedia'
+##    elif '<dt>Category:</dt> <dd>Literary' in html:
+##        return 'literary'
+##    elif '<dt>Category:</dt> <dd>Literary' in html:
+##        return 'literary'
+##    elif '<dt>Category:</dt> <dd>Visual' in html:
+##        return 'visual'
+##    else:
+##        raise Exception('Cannot determine submission category!')
 
 
 def save_bandcamp_submission(output_path,submission_number,submission_page_html):
@@ -113,6 +151,38 @@ def save_bandcamp_submission(output_path,submission_number,submission_page_html)
 ##    """Save youtube embed submissions"""
 ##    assert(detect_if_youtube_submission(submission_page_html))
 ##    return True
+
+##
+##def save_submission_multimedia(output_path,submission_number,submission_page_html):
+##    # Save the image if it exists
+##    if 'detail-art' in submission_page_html:
+##        logging.debug("Saving multimedia submission header image")
+##        '<div\sid="detail-art">\s+<img\ssrc="([^"]+)"'
+##        header_image_link_search = re.search('<div\sid="detail-art">\s+<img\ssrc="([^"]+)"', submission_page_html, re.IGNORECASE)
+##        header_image_link = header_image_link_search.group(1)
+##        # Get the filename + filepath
+##        header_image_filename_search = re.search("""/([^"/?]+)$""", header_image_link, re.IGNORECASE)
+##        header_image_filename = header_image_filename_search.group(1)
+##        header_image_path = generate_media_filepath(
+##            root_path = output_path,
+##            media_type = "submission",
+##            media_id = submission_number,
+##            media_filename = header_image_filename
+##            )
+##        # Save the image
+##        header_image_data = get_url_requests(header_image_link)
+##        if not header_image_data:
+##            raise exception("Failed to load multimedia header image!")
+##        save_file(
+##            file_path = header_image_path,
+##            data = header_image_data,
+##            force_save = True,
+##            allow_fail = False
+##            )
+##        logging.debug("Saved multimedia header image.")
+##    if '?download' in submission_page_html:
+
+
 
 
 def save_submission_tag_history(output_path, submission_number):
@@ -210,7 +280,7 @@ def save_submission_normal(output_path,submission_number,submission_page_html):
     else:
         # Handle lack of download link
         if check_if_dl_skip_is_permitted(submission_number,submission_page_html):
-            logging.info("Permitting failure to find download link.")
+            logging.warning("Permitting failure to find download link.")
             appendlist(
                 lines = repr(submission_number),
                 list_file_path=os.path.join("debug", "submission_linkfind_error.txt"),
@@ -287,7 +357,6 @@ def save_submission(output_path, submission_number):
 
     # Save the tags
     save_submission_tag_history(output_path, submission_number)
-    logging.debug("Finished saving submission_number: "+repr(submission_number))
 
     # Save the submission page last
     # Generate local html filepath
@@ -303,29 +372,23 @@ def save_submission(output_path, submission_number):
         force_save = True,
         allow_fail = False
         )
+    logging.debug("Finished saving submission_number: "+repr(submission_number))
     return True
 
 
 def save_submission_range(output_path,start_number,stop_number):
     logging.info("Saving range of submissions:"+repr(start_number)+" to "+repr(stop_number))
     for submission_number in xrange(start_number,stop_number):
+        logging.info("Saving submissionID %s" % (submission_number))
         success = save_submission(output_path,submission_number)
-        if success:
-            appendlist(
-                lines = repr(submission_number),
-                list_file_path=os.path.join("debug", "submission_success.txt"),
-                initial_text="# List of successfully grabbed submission IDs.\r\n"
-                )
-        else:
-            appendlist(
-                lines = repr(submission_number),
-                list_file_path=os.path.join("debug", "submission_fail.txt"),
-                initial_text="# List of failed submission IDs.\r\n"
+        appendlist(
+                lines = 't: %s, id: %s, r: %s' % (repr(time.time()), repr(submission_number), repr(success)),#  str(datetime.datetime.now()),
+                list_file_path=os.path.join("debug", "submission_stats.txt"),
+                initial_text="# time: UNIXTIME, id: ITEM_NUMBER, r: SUCCESS IDs.\r\n"
                 )
         submission_number += 1
         continue
     logging.info("Finished saving range of submissions:"+repr(start_number)+" to "+repr(stop_number))
-
 
 
 def cli():
@@ -348,6 +411,7 @@ def test():
     """Run various test cases.
     HINT: Wipe the download folder so you get clean results."""
     logging.info('running test cases')
+    save_submission(output_path=config.root_path,submission_number=11931)# Crashed?
     save_submission(output_path=config.root_path,submission_number=1220462)# text download AND image
     save_submission(output_path=config.root_path,submission_number=1169192)# text download AND image
     save_submission(output_path=config.root_path,submission_number=1199683)# text download AND image
@@ -368,8 +432,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_submission_log.txt"))
-        #test()
-        cli()
+        test()
+        #cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)

@@ -69,17 +69,10 @@ def save_journal_range(output_path,start_number,stop_number):
     logging.info("Saving range of journals:"+repr(start_number)+" to "+repr(stop_number))
     for journal_number in xrange(start_number,stop_number):
         success = save_journal(output_path,journal_number)
-        if success:
-            appendlist(
-                lines = repr(journal_number),
-                list_file_path=os.path.join("debug", "journal_success.txt"),
-                initial_text="# List of successfully grabbed journal IDs.\r\n"
-                )
-        else:
-            appendlist(
-                lines = repr(journal_number),
-                list_file_path=os.path.join("debug", "journal_fail.txt"),
-                initial_text="# List of failed journal IDs.\r\n"
+        appendlist(
+                lines = 't: %s, id: %s, r: %s' % (repr(time.time()), repr(submission_number), repr(success)),#  str(datetime.datetime.now()),
+                list_file_path=os.path.join("debug", "journal_stats.txt"),
+                initial_text="# time: UNIXTIME, id: ITEM_NUMBER, r: SUCCESS IDs.\r\n"
                 )
         journal_number += 1
         continue

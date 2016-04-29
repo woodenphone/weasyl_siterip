@@ -199,8 +199,16 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
 
             print_(str(response.status_code))
 
+            save_file(
+                file_path = os.path.join("debug","fetch_last_response.htm"),
+                data = response.content,
+                force_save = True,
+                allow_fail = True
+                )
+
             if response.status_code == 404:
-                print_('404!.')
+                print_('404! Sleeping.')
+                time.sleep(2)
                 return None
 
             if response.status_code != expect_status:
