@@ -131,7 +131,7 @@ def save_bandcamp_submission(output_path,submission_number,submission_page_html)
         media_filename = submission_image_filename
         )
     save_file(
-        file_path = submission_image_path,
+        file_path = submission_media_path,
         data = submission_image,
         force_save = True,
         allow_fail = False
@@ -432,8 +432,8 @@ def test():
 def main():
     try:
         setup_logging(log_file_path=os.path.join("debug","weasyl_siterip_submission_log.txt"))
-        test()
-        #cli()
+        #test()
+        cli()
     except Exception, e:# Log fatal exceptions
         logging.critical("Unhandled exception!")
         logging.exception(e)
