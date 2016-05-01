@@ -3,5 +3,6 @@ config.py
 debug/
 hosted/
 output/
+tmp/
 *.txt
 download/
