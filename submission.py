@@ -102,7 +102,14 @@ def save_story_header_image(output_path, submission_number, submission_page_html
         # Save the image
         story_header_data = get_url_requests(story_header_link)
         if not story_header_data:
-            raise Exception("Failed to load story header image!")
+            # Handle specific case where a image is broken.
+            if int(submission_number) in [
+                41511,# 'https://cdn.weasyl.com/static/submission/23/82/b5/f4/9b/fe/41511.cover.png'
+                ]:
+                logging.error('Permitting failure to save image for known error case: %s' % (submission_number))
+                return False
+            else:
+                raise Exception("Failed to load story header image!")
         save_file(
             file_path = story_header_path,
             data = story_header_data,
