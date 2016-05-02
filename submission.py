@@ -102,7 +102,7 @@ def save_story_header_image(output_path, submission_number, submission_page_html
         # Save the image
         story_header_data = get_url_requests(story_header_link)
         if not story_header_data:
-            raise exception("Failed to load story header image!")
+            raise Exception("Failed to load story header image!")
         save_file(
             file_path = story_header_path,
             data = story_header_data,
