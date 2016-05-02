@@ -185,9 +185,11 @@ def fetch(url, method='get', data=None, expect_status=200, headers=None):
         }
     if headers:
         headers.update(headers)
-
-    for try_num in range(5):
+    logging.debug('fetch() url: %s' % (url))
+    for try_num in range(10):
         try:
+            if try_num > 1:
+                time.sleep(60)
             print_('Fetch', url, '...', end='')
 
             if method == 'get':
